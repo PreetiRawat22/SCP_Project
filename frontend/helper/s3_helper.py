@@ -1,11 +1,11 @@
 import sys
 import boto3
 from botocore.exceptions import ClientError
-import os
 
 class Upload_File(object):
     def __init__(self):
-        self.s3=boto3.resource('s3', region_name=os.getenv('REGION_NAME'))
+        self.s3=boto3.resource('s3', region_name='us-east-1', aws_access_key_id='AKIAZBFXZ5ZYPL4YQS4X',
+                               aws_secret_access_key='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')
         
     def create_bucket(self, bucket_name):
          
@@ -36,11 +36,7 @@ class Upload_File(object):
     def download_file(self, bucket_name, file_name):
         s3=boto3.client('s3', region_name='us-east-1')
         try:
-
-            #with open("tmp.pdf", "wb") as f:
-               #response=s3.download_fileobj(bucket_name, file_name, f)
             response = s3.download_file(bucket_name, file_name, "attachments")
-            #response=s3.download_file(Bucket=bucket_name, Key=file_name, Filename=file_name)
             return response
             
         except ClientError as ex:
@@ -48,7 +44,8 @@ class Upload_File(object):
         return response
         
     def get_object_access_url(self, bucket_name, file_name):
-        s3=boto3.client('s3', region_name=os.getenv('REGION_NAME'))
+        s3=boto3.client('s3', region_name='us-east-1', aws_access_key_id='AKIAZBFXZ5ZYPL4YQS4X',
+                               aws_secret_access_key='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')
         # Generate the URL to get 'key-name' from 'bucket-name'
         url = s3.generate_presigned_url(
         ClientMethod='get_object',

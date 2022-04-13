@@ -64,7 +64,6 @@ def cart_count():
 @blueprint.route('/', methods=['GET'])
 def index():
     if current_user.is_authenticated:
-        #session['order'] = OrderClient.get_order_from_session()
          session['order']={}
     try:
         books = BookClient.get_books()
@@ -106,14 +105,8 @@ def login():
                 session['user_api_key'] = api_key
                 user = UserClient.get_user()
                 session['user'] = user['result']
-                print(session['user'].get("role"))
-
-                #order = OrderClient.get_order()
-                #if order.get('result'):
-                 #   session['order'] = order['result']
                 session['books']=BookClient.get_books()
-                session['order'] = {}
-                flash('Welcome back')
+                flash('Welcome back {}'.format(session['user'].get("username")))
                 return redirect(url_for('frontend.index'))
             else:
                 flash('Cannot Login')
@@ -191,17 +184,16 @@ def add_book():
     form = forms.AddNewBookForm()
     print("before post")
     if request.method == 'POST':
-        print("after post")
         if form.validate_on_submit():
-            print("after submit")
             bookname = form.name.data
             book = BookClient.add_book(form)
-            print(book)
-            if book:
-                f = form.upload.data
-                filename = secure_filename(f.filename)
+            f = form.upload.data
+            filename = secure_filename(f.filename)
+            if filename!=bookname+'.pdf':
                 print(filename)
-                #f.save('uploads/' + bookname+'.pdf')
+                print(bookname)
+                flash("Wrong file uploaded. Please upload {}".format(bookname))
+            elif book:
                 upload_file=Upload_File()
                 if(upload_file.create_bucket('scpprojbucket')):
                     isFileUploaded=upload_file.upload_file('scpprojbucket',f,filename)
@@ -226,7 +218,6 @@ def google_api():
 @blueprint.route('/search_books', methods=['POST','GET'])
 def search_books():
     if current_user.is_authenticated:
-        #session['order'] = OrderClient.get_order_from_session()
          session['order']={}
     try:
         books = BookClient.get_books()
@@ -237,9 +228,6 @@ def search_books():
 
 @blueprint.route('/download/<name>', methods=['GET'])
 def download(name):
-    #path = "uploads/"+str(name)+".pdf"
-    #return(send_file(path, as_attachment=True)
-    flash("file download")
     file_nm=str(name)+'.pdf'
     uploaded_file_object=Upload_File()
     url=uploaded_file_object.get_object_access_url('scpprojbucket', file_nm)
@@ -337,19 +325,16 @@ def createassignment():
                         flash('book not added'+bookname)
                 
                 print(filename)
-                #f.save('uploads/' + bookname+'.pdf')
                 flash("book added.")
             else:
                 flash('book not added'+bookname)
 
     return render_template('create_assignment.html', students=session['students'], form=form)
-    #return render_template('create_assignment.html', form=form)
 
 
 def use_google_calender(state_date, emails,meetingduration, title):
     credentials=pickle.load(open("token.pkl", "rb"))
     print(credentials)
-    #start_time=datetime(2022, 3, 22, 19, 30)
     start_time=datetime.strptime(state_date, '%Y-%m-%dT%H:%M')
     end_time=start_time+timedelta(hours=float(meetingduration))
     time_zone='Asia/Kolkata'
@@ -362,7 +347,6 @@ def use_google_calender(state_date, emails,meetingduration, title):
         print(calendar_events['items'][0])
         event={
         'summary': title,
-        #'location': '800 Howard St., San Francisco, CA 94103',
         'description': title,
         'start': {
         'dateTime': start_time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -392,8 +376,6 @@ def use_google_calender(state_date, emails,meetingduration, title):
         event = service.events().insert(calendarId=calender_id, 
         conferenceDataVersion= 1,body=event, sendNotifications=True).execute()
         print('Event created: %s' % (event.get('htmlLink')))
-        #create_event=service.events.insert(calendarId=calender_id, body=event).execute()
-        #print(create_event)
     else:      
         scopes = ['https://www.googleapis.com/auth/calendar']
         flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
@@ -407,9 +389,8 @@ def use_google_calender(state_date, emails,meetingduration, title):
         calendar_events= service.events().list(calendarId=calender_id).execute()
         print(calendar_events['items'][0])
         event={
-        'summary': 'Google I/O 2015',
-        'location': '800 Howard St., San Francisco, CA 94103',
-        'description': 'A chance to hear more about Google\'s developer products.',
+        'summary': title,
+        'description': title,
         'start': {
         'dateTime': start_time.strftime("%Y-%m-%dT%H:%M:%S"),
         'timeZone': time_zone,
@@ -418,9 +399,14 @@ def use_google_calender(state_date, emails,meetingduration, title):
         'dateTime': end_time.strftime("%Y-%m-%dT%H:%M:%S"),
         'timeZone': time_zone,
         },
-        #'attendees': [
-        #{'email': 'advik.dangwal0909@gmail.com'}
-        #],
+        "conferenceData": {
+        "createRequest": {
+        "conferenceSolutionKey": {
+          "type": "hangoutsMeet"
+        },
+        "requestId": "some-random-string2"
+        }
+        },
         'attendees': emails,
         'reminders': {
         'useDefault': False,
@@ -430,6 +416,7 @@ def use_google_calender(state_date, emails,meetingduration, title):
         ],
         },
         }
-        event = service.events().insert(calendarId=calender_id, body=event, sendNotifications=True).execute()
+        event = service.events().insert(calendarId=calender_id, conferenceDataVersion= 1,
+        body=event, sendNotifications=True).execute()
         print('Event created: %s' % (event.get('htmlLink')))
     

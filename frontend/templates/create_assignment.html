@@ -26,25 +26,11 @@
 
   
 </script>
-<!--<div class="row"><h3>Search a book</h3></div>-->
 <div class="row">
 
-    <h3>Book a virtual classroom</h3>
+    <h3>Create an Assignment</h3>
         <strong>{{ message }}</strong>
         <div class="card card-body">
-            <!--<form action="/block_calendar" method="POST">
-                <input type="hidden" id="studentids" name="studentids">
-                <label for="studentsmeet"> students</label>
-                <input type="text" id="studentsmeet" name="studentsmeet"><br><br>
-
-                <label for="meeting_information"> Title </label>
-                <input type="text" id="meeting_information" name="meeting_information"><br><br>
-                <label for="Meetingtime">Meeting Start (date and time):</label>
-                <input type="datetime-local" id="Meetingtime" name="Meetingtime"></br></br>
-                <label for="meeting_duration">Meeting duration:</label>
-                <input type="number" id="meeting_duration" min=0 step="0.0001" name="meeting_duration"></br></br>
-                <input type="submit" value="Submit">
-              </form>-->
               <form action="create_assignment" method="post" enctype="multipart/form-data">
                 {{ form.hidden_tag() }}
                 <div class="form-group">
@@ -97,37 +83,6 @@
         </table>
     </div>
 </div>
-
-    <!--<div class="container mt-5" style="max-width: 500px">
-        <h1>Add a Assignment</h1>
-        <strong>{{ message }}</strong>
-        
-        <form method="post" enctype="multipart/form-data">
-            {{ form.hidden_tag() }}
-            <div class="form-group">
-                {{ form.student_ids.label(class_="form-label mt-3") }}:
-                {{ form.student_ids(class_="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.maximum_marks.label(class_="form-label  mt-3") }}:
-                {{ form.maximum_marks(class_="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.assignment_topic.label(class_="form-label  mt-3") }}:
-                {{ form.assignment_topic(class_="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.upload.label(class_="form-label  mt-3") }}:
-                {{ form.upload(class_="form-control") }}
-                
-               
-            </div>
-            {{ form.submit(class_="w-100 btn btn-primary mt-3") }}
-
-        </form>
-
-        
-    </div>-->
 
 {% endblock %}
 

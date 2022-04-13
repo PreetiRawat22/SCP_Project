@@ -15,36 +15,26 @@
 </script>
 <div class="row"><h3>Search a book</h3></div>
 <div class="row">
-    <!--<div class="col-md-4">
-        <div class="card card-body">
-            form
-        </div>
-    </div>-->
-<!--<div class="container mt-5" style="max-width: 500px">
-        <h1>Search Books</h1>
-        <strong>{{ message }}</strong>-->
         <strong>{{ message }}</strong>
     <div class="col-md-8">
         <table id="example" class="table table-striped table-bordered" style="width:100%">
         <thead>
             <tr>
-                <td></td>
-                <td>ID</td>
+                <td>Book ID</td>
                 <td>Book Name</td>
                 <td>Author Name</td>
-                <td>Price</td>
-                <td>Action</td>
+                <td>Published Year</td>
+                <td>Download</td>
             </tr>
         </thead>
         <tbody>
             {% if books | length > 0 %}
             {% for data in books.result %}
             <tr>
-                <td><input type="checkbox" id="vehicle3" name="vehicle3" value="Boat"></td>
                 <td>{{data.id}} </td>
                 <td>{{data.name}}</td>
-                <td>{{data.slug}}</td> 
-                <td>{{data.price}}</td>  
+                <td>{{data.author_name}}</td> 
+                <td>{{data.published_year}}</td>  
                 <td width="130">
                     <a href="/download/{{data.name}}"  class="btn btn-secondary btn-sm">download</a>
                 </td>
