@@ -12,19 +12,24 @@
                 "aLengthMenu":[[5,10,15,-1],[5,10,15,"All"]],
                 "iDisplayLength":5
         });
-        var listvalues = []
-    $('.studentidselector').on('change', function() {
-    if(this.checked){
-        listvalues.push(this.value);
-    }
-    else {
-        listvalues = listvalues.filter(item => item != this.value);
-    }
-    $('#student_ids').val(listvalues)
-});
-    });
+        
 
-  
+    studentsinmeet=[]
+    studentids=[]
+    function addstudentformeeting(studentsid, studentname){
+        if(studentids.indexOf(studentsid) === -1 && studentsinmeet.indexOf(studentname) === -1)
+        {
+        studentsinmeet.push(studentname);
+        studentids.push(studentsid);
+        }
+        else{
+        studentids = studentids.filter(item => item !=studentsid);
+        studentsinmeet = studentsinmeet.filter(item => item !=studentname);
+        }
+       
+        $('#studentsmeet').val(studentsinmeet)
+        $('#student_ids').val(studentids)
+    }
 </script>
 <div class="row">
 
@@ -71,7 +76,8 @@
             {% if students | length > 0 %}
             {% for data in students.result %}
             <tr>
-                <td><input type="checkbox" id='{{data.id}}' name='{{data.username}}' class="studentidselector" value='{{data.id}}'></td>
+                <!--<td><input type="checkbox" id='{{data.id}}' name='{{data.username}}' class="studentidselector" value='{{data.id}}'></td>-->
+                <td><input type="checkbox" id='{{data.id}}' name='{{data.username}}' value="Boat" onclick="addstudentformeeting(this.id, this.name)"></td>
                 <td>{{data.id}} </td>
                 <td>{{data.username}}</td>
                 <td>{{data.role}}</td> 
