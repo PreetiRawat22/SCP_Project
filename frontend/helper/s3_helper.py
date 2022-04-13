@@ -4,8 +4,7 @@ from botocore.exceptions import ClientError
 
 class Upload_File(object):
     def __init__(self):
-        self.s3=boto3.resource('s3', region_name='us-east-1', aws_access_key_id='AKIAZBFXZ5ZYPL4YQS4X',
-                               aws_secret_access_key='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')
+        self.s3=boto3.resource('s3', region_name='us-east-1')
         
     def create_bucket(self, bucket_name):
          
@@ -44,8 +43,7 @@ class Upload_File(object):
         return response
         
     def get_object_access_url(self, bucket_name, file_name):
-        s3=boto3.client('s3', region_name='us-east-1', aws_access_key_id='AKIAZBFXZ5ZYPL4YQS4X',
-                               aws_secret_access_key='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')
+        s3=boto3.client('s3', region_name='us-east-1')
         # Generate the URL to get 'key-name' from 'bucket-name'
         url = s3.generate_presigned_url(
         ClientMethod='get_object',
