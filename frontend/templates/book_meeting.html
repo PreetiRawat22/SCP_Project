@@ -2,6 +2,33 @@
 {% block title %}Booking the classroom{% endblock %}
 
 {% block pageContent %}
+<style>
+    input[type=text], select {
+      width: 100%;
+      padding: 12px 20px;
+      margin: 8px 0;
+      display: inline-block;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    
+    input[type=submit] {
+      width: 100%;
+      background-color: blue;
+      color: white;
+      padding: 14px 20px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    input[type=submit]:hover {
+      background-color: blue;
+    }
+    
+    </style>
 <script src="https://code.jquery.com/jquery-1.12.4.js" type="text/javascript"></script>
 <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap4.min.js"></script>
@@ -14,11 +41,20 @@
         });
   
     });
+
     studentsinmeet=[]
     studentids=[]
     function addstudentformeeting(studentsid, studentname){
+        if(studentids.indexOf(studentsid) === -1 && studentsinmeet.indexOf(studentname) === -1)
+        {
         studentsinmeet.push(studentname);
         studentids.push(studentsid);
+        }
+        else{
+        studentids = studentids.filter(item => item !=studentsid);
+        studentsinmeet = studentsinmeet.filter(item => item !=studentname);
+        }
+       
         $('#studentsmeet').val(studentsinmeet)
         $('#studentids').val(studentids)
     }

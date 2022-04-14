@@ -7,6 +7,7 @@ classroom_blueprint = Blueprint('classroom_api_routes', __name__, url_prefix="/a
 
 USER_API_URL = 'http://127.0.0.1:5001/api/user'
 
+#get the current logged in or in session user details.
 def get_user(api_key):
     headers = {
         'Authorization': api_key
@@ -19,7 +20,8 @@ def get_user(api_key):
     user = response.json()
     return user
 
-
+#save the virtual classroom details in virtualclassroom model. It also saves the detail related to the 
+#invitee of the virtual classroom into VirtualClassroomInvitee.
 @classroom_blueprint.route('/create', methods=['POST'])
 def create_classrooms():
     try:
@@ -28,19 +30,13 @@ def create_classrooms():
         vc.meeting_information = request.form['meeting_information']
         vc.duration = request.form['duration']
         vc.date_of_booking = request.form['date_of_booking']
-        
-        
-        #print('id is' + vc.id)
-        #db.session.commit()
-        
-        #vci=VirtualClassroomInvitee()
+
         studentids=request.form['invitees_id']
         idarray = studentids.split(',')
 
         for id in idarray:
             vci=VirtualClassroomInvitee()
             vci.invitee_id=id
-            #vci.meeting_id=vc.id
             vc.virtual_classroom_invitees.append(vci)
         db.session.add(vc)
         db.session.commit()
@@ -53,7 +49,7 @@ def create_classrooms():
 
     return jsonify(response)
 
-
+#It gets the scheduled virtual classroom details by the user id or invitee id. 
 @classroom_blueprint.route('/<invitee_id>', methods=['GET'])
 def get_meeting(invitee_id):
     meetings = VirtualClassroomInvitee.query.filter_by(invitee_id=invitee_id).all()
@@ -63,8 +59,5 @@ def get_meeting(invitee_id):
     for m in meets:
         vc = VirtualClassroom.query.filter_by(id = m['meeting_id']).first()
         scheduled_classes.append(vc.serialize())
-    #response = VirtualClassroom.query.filter(VirtualClassroom.id.in_(meetings['meeting_id'])).all()
-
-
     response = {"result":scheduled_classes}
     return jsonify(response)

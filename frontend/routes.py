@@ -1,10 +1,11 @@
-from flask import Blueprint, render_template, session, redirect, request, flash, url_for, send_file, send_from_directory
+from flask import Blueprint, render_template, session, redirect, request, flash, url_for, send_file, send_from_directory, jsonify
 from flask_login import current_user
 
 import forms
 from api.book_client import BookClient
 from api.user_api import UserClient
 from api.classroom_api import ClassroomClient
+from api.emailexcel_client import EmailExcelClient
 from werkzeug.utils import secure_filename
 from apiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -16,7 +17,8 @@ from datetime import datetime, timedelta
 from helper.queue_helper import SQSHelper
 from helper.s3_helper import Upload_File
 import webbrowser
-
+import pandas as pd
+import base64
 
 blueprint = Blueprint('frontend', __name__)
 
@@ -49,17 +51,6 @@ def get_event():
   },
 }
     return event
-
-@blueprint.context_processor
-def cart_count():
-    count = 0
-    order = session.get('order')
-    if order:
-        for item in order.get('order_items'):
-            count += item['quantity']
-
-    return {'cart_items': count}
-
 
 @blueprint.route('/', methods=['GET'])
 def index():
@@ -120,7 +111,7 @@ def login():
 def logout():
     session.clear()
     flash('Logged out')
-    return redirect(url_for('frontend.index'))
+    return render_template('thankyou.html')
 
 
 @blueprint.route('/book/<slug>', methods=['GET', 'POST'])
@@ -143,76 +134,32 @@ def book_details(slug):
     return render_template('book_info.html', book=book, form=form)
 
 
-@blueprint.route('/checkout', methods=['GET'])
-def checkout():
-    if 'user' not in session:
-        flash('Please login')
-        return redirect(url_for('frontend.login'))
-
-    if 'order' not in session:
-        flash("Please add some books to the cart")
-        return redirect(url_for("frontend.index"))
-
-    order = OrderClient.get_order()
-
-    if len(order['result']['order_items']) == 0:
-        flash("Please add some books to the cart")
-        return redirect(url_for("frontend.index"))
-
-    OrderClient.checkout()
-
-    return redirect(url_for('frontend.thank_you'))
-
-
-@blueprint.route('/thank-you', methods=['GET'])
-def thank_you():
-    if 'user' not in session:
-        flash('Please login')
-        return redirect(url_for('frontend.login'))
-
-    if 'order' not in session:
-        flash("Please add some books to the cart")
-        return redirect(url_for("frontend.index"))
-
-    session.pop('order', None)
-    flash("Your order is processing.")
-
-    return render_template('thankyou.html')
-
 @blueprint.route('/add_book', methods=['POST','GET'])
 def add_book():
     form = forms.AddNewBookForm()
-    print("before post")
     if request.method == 'POST':
         if form.validate_on_submit():
             bookname = form.name.data
-            book = BookClient.add_book(form)
+            
             f = form.upload.data
             filename = secure_filename(f.filename)
             if filename!=bookname+'.pdf':
-                print(filename)
-                print(bookname)
                 flash("Wrong file uploaded. Please upload {}".format(bookname))
-            elif book:
-                upload_file=Upload_File()
-                if(upload_file.create_bucket('scpprojbucket')):
-                    isFileUploaded=upload_file.upload_file('scpprojbucket',f,filename)
-                    print(isFileUploaded)
-                    #if file is uploaded then save the details in the database. 
-                    if(isFileUploaded):
-                        flash("book added.")
-                    else:
-                        flash('book not added'+bookname)
+            elif filename==bookname+'.pdf':
+                book = BookClient.add_book(form)
+                if book:
+                    upload_file=Upload_File()
+                    if(upload_file.create_bucket('scpprojbucket')):
+                        isFileUploaded=upload_file.upload_file('scpprojbucket',f,filename)
+                        #if file is uploaded then save the details in the database. 
+                        if(isFileUploaded):
+                            flash("book added.")
+                        else:
+                            flash('book not added'+bookname)
             else:
                 flash('book not added'+bookname)
     
     return render_template('add_book.html', form=form)
-
-@blueprint.route('/google_api', methods=['POST','GET'])
-def google_api():
-    scopes = ['https://www.googleapis.com/auth/calendar']
-    flow = InstalledAppFlow.from_client_secrets_File("client_secret.json", scopes=scopes)
-    flow.run_console()
 
    
 @blueprint.route('/search_books', methods=['POST','GET'])
@@ -238,11 +185,8 @@ def download(name):
 
 @blueprint.route('/scheduled_classes', methods=['GET'])
 def scheduled_classes():
-    #path = "uploads/"+str(name)+".pdf"
-    #return(send_file(path, as_attachment=True)
     userid=session['user'].get("id")
     classes = ClassroomClient.get_scheduled_meetings(userid)
-    print(classes['result'])
     return render_template('scheduled_classes.html', classes=classes)
     
 @blueprint.route('/classroom_booking', methods=['GET','POST'])
@@ -274,13 +218,26 @@ def block_calender():
             attendent_email=userdetail["result"].get("email")
             attendent_emails.append({"email":attendent_email})
         attendent_emails.append({"email":organizer_email })
-        #print('attendent email are'+attendent_emails)
         use_google_calender(meetingtime, attendent_emails, meetingduration,meetingtitle)
         saved_classroom=ClassroomClient.create_classroom(form)
         session['classroom'] = saved_classroom['result']
     flash("Notified "+ str(studentnames))
     students=UserClient.get_users()
     return render_template('book_meeting.html', students=students)
+
+@blueprint.route('/email_excel', methods=['POST', 'GET'])
+def email_excel():
+    books = session['books']
+    df = pd.DataFrame(books['result'], columns=['name', 'author_name', 'published_year'])
+    pickled = pickle.dumps(df)
+    pickled_b64 = base64.b64encode(pickled)
+    useremailid=session['user'].get("email")
+    email_subject="Details of books are attached"
+    email_text="Please find attached books details."
+    result=EmailExcelClient.email_excel(pickled_b64, useremailid, email_subject, email_text)
+    if(result['issucessful']):
+        flash("details of all book is mailed to {}.".format(useremailid))
+    return redirect(url_for('frontend.search_books'))
 
 @blueprint.route('/create_assignment', methods=['POST','GET'])
 def createassignment():
@@ -292,22 +249,16 @@ def createassignment():
             organizer_email=session['user'].get("email")
             idarray = sids.split(',')
             for id in idarray:
-                print(id)
                 userdetail = UserClient.get_userbyid(id)
                 attendent_email=userdetail["result"].get("email")
-                print(attendent_email)
                 attendent_emails.append(attendent_email)
             attendent_emails.append(organizer_email)
-            print(attendent_emails)
-            #book = BookClient.add_book(form)
-            #if book:
             f = form.upload.data
             filename = secure_filename(f.filename)
             #upload assignment file to s3
             upload_file=Upload_File()
             if(upload_file.create_bucket('scpprojbucket')):
                 isFileUploaded=upload_file.upload_file('scpprojbucket',f,filename)
-                print(isFileUploaded)
                 #if file is uploaded then save the details in the database. 
                 if(isFileUploaded):
                     #get file url from s3
@@ -318,13 +269,12 @@ def createassignment():
                     data={"emailIds": attendent_emails, "assignment_url": str(url)}
                     #checks if message is sent successfully. 
                     isMessageSent=sqsobj.send_message(data)
-                    print(isMessageSent)
                     if(isMessageSent):
                         flash("assignment sent successfully.")
                     else:
                         flash('book not added'+bookname)
                 
-                print(filename)
+                
                 flash("book added.")
             else:
                 flash('book not added'+bookname)
@@ -334,17 +284,14 @@ def createassignment():
 
 def use_google_calender(state_date, emails,meetingduration, title):
     credentials=pickle.load(open("token.pkl", "rb"))
-    print(credentials)
     start_time=datetime.strptime(state_date, '%Y-%m-%dT%H:%M')
     end_time=start_time+timedelta(hours=float(meetingduration))
     time_zone='Asia/Kolkata'
-    if credentials: 
+    try: 
         service = build("calendar", "v3", credentials=credentials)
         result=service.calendarList().list().execute()
-        print(result['items'][0]['id'])
         calender_id=result['items'][0]['id']
         calendar_events= service.events().list(calendarId=calender_id).execute()
-        print(calendar_events['items'][0])
         event={
         'summary': title,
         'description': title,
@@ -376,7 +323,7 @@ def use_google_calender(state_date, emails,meetingduration, title):
         event = service.events().insert(calendarId=calender_id, 
         conferenceDataVersion= 1,body=event, sendNotifications=True).execute()
         print('Event created: %s' % (event.get('htmlLink')))
-    else:      
+    except Exception as e:
         scopes = ['https://www.googleapis.com/auth/calendar']
         flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
         credentials = flow.run_console()
@@ -384,10 +331,8 @@ def use_google_calender(state_date, emails,meetingduration, title):
         credentials=pickle.load(open("token.pkl", "rb"))
         service = build("calendar", "v3", credentials=credentials)
         result=service.calendarList().list().execute()
-        print(result['items'][0]['id'])
         calender_id=result['items'][0]['id']
         calendar_events= service.events().list(calendarId=calender_id).execute()
-        print(calendar_events['items'][0])
         event={
         'summary': title,
         'description': title,

@@ -22,13 +22,10 @@ class RegistrationForm(FlaskForm):
 class AddNewBookForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     slug = StringField('Slug', validators=[DataRequired()])
-    #price = IntegerField('Price')
-    #image= StringField('Image')
     author_name = StringField('Author Name')
     published_year= StringField('Published Year')
     upload = FileField("Please select an image to upload", validators=[InputRequired()])
-    #file = FileField("File")
-    submit = SubmitField('add_book')
+    submit = SubmitField('Add Book')
 
 class ItemForm(FlaskForm):
     book_id = HiddenField(validators=[DataRequired()])
@@ -40,3 +37,5 @@ class CreateAssignmentForm(FlaskForm):
     maximum_marks=IntegerField('maximum marks')
     assignment_topic=StringField('Assignment Topic', validators=[DataRequired()])
     submit = SubmitField('Create Assignment')
+    
+    

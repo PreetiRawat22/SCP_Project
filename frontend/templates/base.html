@@ -20,7 +20,7 @@
 {#---------------------------#}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">E-Learning Platform</a>
+        <a class="navbar-brand" href="#">E-School Platform</a>
         <button aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation"
                 class="navbar-toggler"
                 data-bs-target="#navbarNavAltMarkup" data-bs-toggle="collapse" type="button">
@@ -35,17 +35,15 @@
                 {% else %}
                 {% if session['user'].get("role") == 'teacher' %}
                 <a class="nav-link" href="/add_book">Add a Book</a>
-                <a class="nav-link" href="/classroom_booking">book classroom</a>
+                <a class="nav-link" href="/classroom_booking">Book Classroom</a>
                 <a class="nav-link" href="/get_students">Create Assignment</a>
                 {% endif %}
                 {% if session['user'].get("role") == 'student' %}
-                <a class="nav-link" href="/scheduled_classes">scheduled classes</a>
+                <a class="nav-link" href="/scheduled_classes">Scheduled Classes</a>
                 {% endif %}
-                <a class="nav-link" href="/search_books">search books</a>
+                <a class="nav-link" href="/search_books">Search Books</a>
                 <a class="nav-link" href="/logout">Logout</a>
                 {% endif %}
-                <a class="nav-link" href="/checkout">Checkout
-                    <span class="badge rounded-pill bg-light text-dark">{{ cart_items }} </span></a>
             </div>
         </div>
     </div>

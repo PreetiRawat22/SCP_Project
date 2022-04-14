@@ -7,19 +7,18 @@ def init_app(app):
     db.app = app
     db.init_app(app)
 
-
+#The book model having information about book like author name, slug, published year etc. 
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), unique=True, nullable=False)
     slug = db.Column(db.String(255), unique=True, nullable=False)
-    #price = db.Column(db.Integer, nullable=True)
-    #image = db.Column(db.String(255))
     author_name = db.Column(db.String(150), nullable=False)
     published_year = db.Column(db.String(255))
 
     def __repr__(self):
         return f'<book {self.id} {self.name}>'
 
+    #method to serialize the book model. 
     def serialize(self):
         return {
             'id': self.id,

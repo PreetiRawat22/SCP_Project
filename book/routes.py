@@ -4,7 +4,7 @@ from models import Book, db
 
 book_blueprint = Blueprint('book_api_routes', __name__, url_prefix='/api/book')
 
-
+#Gets all the book details saved in the database.
 @book_blueprint.route('/all', methods=['GET'])
 def get_all_books():
     all_books = Book.query.all()
@@ -12,22 +12,15 @@ def get_all_books():
     response = {"result":result}
     return jsonify(response)
 
-
+#Save the details of the book into the database.
 @book_blueprint.route('/create', methods=['POST'])
 def create_books():
     try:
-        #upload_file=Upload_File()
-        #if(upload_file.create_bucket('elearningbucket')):
-          #          isFileUploaded=upload_file.upload_file('elearningbucket',magazineContent,magzineName+'.pdf')
         book = Book()
         book.name = request.form['name']
         book.slug = request.form['slug']
         book.author_name = request.form['author_name']
         book.published_year = request.form['published_year']
-        #file_content=request.FILES['upload']
-        #if(upload_file.create_bucket('elearningbucket')):
-         #   isFileUploaded=upload_file.upload_file('elearningbucket',file_content,book.name)
-          #  print(isFileUploaded)
         db.session.add(book)
         db.session.commit()
 
@@ -38,7 +31,7 @@ def create_books():
 
     return jsonify(response)
 
-
+#Retrives details of the book based on the slug id.
 @book_blueprint.route('/<slug>', methods=['GET'])
 def book_details(slug):
     book = Book.query.filter_by(slug=slug).first()
