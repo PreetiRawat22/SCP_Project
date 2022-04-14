@@ -286,7 +286,7 @@ def use_google_calender(state_date, emails,meetingduration, title):
     credentials=pickle.load(open("token.pkl", "rb"))
     start_time=datetime.strptime(state_date, '%Y-%m-%dT%H:%M')
     end_time=start_time+timedelta(hours=float(meetingduration))
-    time_zone='Asia/Kolkata'
+    time_zone='Europe/Dublin'
     try: 
         service = build("calendar", "v3", credentials=credentials)
         result=service.calendarList().list().execute()
