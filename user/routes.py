@@ -92,3 +92,13 @@ def get_user(id):
     else:
         response = {"user":"No user found"}
     return jsonify(response)
+
+@user_blueprint.route('/allstudents', methods=['GET'])
+def get_all_students():
+    students = User.query.filter_by(role='student')
+    result = [user.serialize() for user in students]
+    response = {
+        'message': 'Returning all users',
+        'result': result
+    }
+    return jsonify(response)

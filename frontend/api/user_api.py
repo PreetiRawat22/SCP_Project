@@ -63,4 +63,8 @@ class UserClient:
         response = requests.get(USER_API_URL + '/api/user/' + id)
         return response.json()
 
-
+    @staticmethod
+    def get_students():
+        url = USER_API_URL + '/api/user/allstudents'
+        response = requests.get(url)
+        return response.json()

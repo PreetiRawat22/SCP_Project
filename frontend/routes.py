@@ -166,10 +166,10 @@ def classroom_booking():
     students=UserClient.get_users()
     return render_template('book_meeting.html', students=students)
 
-#It gets all the users including students.
+#It gets all students.
 @blueprint.route('/get_students', methods=['GET','POST'])
 def get_students():
-    students=UserClient.get_users()
+    students=UserClient.get_students()
     session['students']=students
     form = forms.CreateAssignmentForm()
     return render_template('create_assignment.html', students=students, form=form)
@@ -205,14 +205,18 @@ def block_calender():
 def email_excel():
     books = session['books']
     df = pd.DataFrame(books['result'], columns=['name', 'author_name', 'published_year'])
-    pickled = pickle.dumps(df)
-    pickled_b64 = base64.b64encode(pickled)
-    useremailid=session['user'].get("email")
-    email_subject="Details of books are attached"
-    email_text="Please find attached books details."
-    result=EmailExcelClient.email_excel(pickled_b64, useremailid, email_subject, email_text)
-    if(result['issucessful']):
-        flash("details of all book is mailed to {}.".format(useremailid))
+    try:
+        pickled = pickle.dumps(df)
+        pickled_b64 = base64.b64encode(pickled)
+        useremailid=session['user'].get("email")
+        email_subject="Details of books are attached"
+        email_text="Please find attached books details."
+        result=EmailExcelClient.email_excel(pickled_b64, useremailid, email_subject, email_text)
+        if(result['issucessful']):
+            flash("details of all book is mailed to {}.".format(useremailid))
+    except Exception as e:
+        print(str(e))
+        flash("issue while emailing the excel file of book details.")
     return redirect(url_for('frontend.search_books'))
 
 #It creates the assignment for a student by the teacher.
@@ -225,40 +229,44 @@ def createassignment():
             attendent_emails=[]
             organizer_email=session['user'].get("email")
             idarray = sids.split(',')
-            for id in idarray:
-                userdetail = UserClient.get_userbyid(id)
-                attendent_email=userdetail["result"].get("email")
-                attendent_emails.append(attendent_email)
-            attendent_emails.append(organizer_email)
             f = form.upload.data
             filename = secure_filename(f.filename)
-            #upload assignment file to s3
-            upload_file=Upload_File()
-            if(upload_file.create_bucket('scpprojbucket')):
-                isFileUploaded=upload_file.upload_file('scpprojbucket',f,filename)
-                #if file is uploaded then save the details in the database. 
-                if(isFileUploaded):
-                    #get file url from s3
-                    uploaded_file_object=Upload_File()
-                    url=uploaded_file_object.get_object_access_url('scpprojbucket', filename)
-                    #push message to the SQS queue
-                    sqsobj= SQSHelper()       
-                    data={"emailIds": attendent_emails, "assignment_url": str(url)}
-                    #checks if message is sent successfully. 
-                    isMessageSent=sqsobj.send_message(data)
-                    if(isMessageSent):
-                        flash("assignment sent successfully.")
+            try:
+                for id in idarray:
+                    userdetail = UserClient.get_userbyid(id)
+                    attendent_email=userdetail["result"].get("email")
+                    attendent_emails.append(attendent_email)
+                attendent_emails.append(organizer_email)
+                #upload assignment file to s3
+                upload_file=Upload_File()
+                if(upload_file.create_bucket('scpprojbucket')):
+                    isFileUploaded=upload_file.upload_file('scpprojbucket',f,filename)
+                    #if file is uploaded then save the details in the database. 
+                    if(isFileUploaded):
+                        #get file url from s3
+                        uploaded_file_object=Upload_File()
+                        url=uploaded_file_object.get_object_access_url('scpprojbucket', filename)
+                        #push message to the SQS queue
+                        sqsobj= SQSHelper()       
+                        data={"emailIds": attendent_emails, "assignment_url": str(url)}
+                        #checks if message is sent successfully. 
+                        isMessageSent=sqsobj.send_message(data)
+                        if(isMessageSent):
+                            flash("assignment {} sent successfully.".format(filename))
+                        else:
+                            flash('issue sending the assignment {}'.format(filename))
                     else:
-                        flash('book not added'+bookname)
-                
-                
-                flash("book added.")
-            else:
-                flash('book not added'+bookname)
 
+                        flash('issue sending the assignment {}'.format(filename))
+                else:
+                    flash('issue sending the assignment {}'.format(filename))
+            except Exception as e:
+                print(str(e))
+                flash('issue sending the assignment {}'.format(filename))
+                
     return render_template('create_assignment.html', students=session['students'], form=form)
 
-#private method to access google calender and google meet
+#private method to access google calender and google meet for sending the invitation for virutal classrooms.
 def use_google_calender(state_date, emails,meetingduration, title):
     credentials=pickle.load(open("token.pkl", "rb"))
     start_time=datetime.strptime(state_date, '%Y-%m-%dT%H:%M')
@@ -302,6 +310,7 @@ def use_google_calender(state_date, emails,meetingduration, title):
         conferenceDataVersion= 1,body=event, sendNotifications=True).execute()
         print('Event created: %s' % (event.get('htmlLink')))
     except Exception as e:
+        print(str(e))
         scopes = ['https://www.googleapis.com/auth/calendar']
         flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
         credentials = flow.run_console()
