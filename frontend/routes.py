@@ -52,19 +52,12 @@ def get_event():
 }
     return event
 
+#action to direct to landing page
 @blueprint.route('/', methods=['GET'])
 def index():
-    if current_user.is_authenticated:
-         session['order']={}
-    try:
-        books = BookClient.get_books()
-        session['books']=books
-    except:
-        books = {'result': []}
-
     return render_template('index.html', books=books)
 
-
+#Registers the new users. user can be a teacher and student.
 @blueprint.route('/register', methods=['POST', 'GET'])
 def register():
     form = forms.RegistrationForm(request.form)
@@ -85,7 +78,7 @@ def register():
 
     return render_template('register.html', form=form)
 
-
+#To login into the application.
 @blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     form = forms.LoginForm()
@@ -106,7 +99,7 @@ def login():
 
     return render_template('login.html', form=form)
 
-
+#To logout from the application.
 @blueprint.route('/logout', methods=['GET'])
 def logout():
     session.clear()
