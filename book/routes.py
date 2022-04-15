@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-
+from sqlalchemy import or_
 from models import Book, db
 
 book_blueprint = Blueprint('book_api_routes', __name__, url_prefix='/api/book')
@@ -42,6 +42,12 @@ def book_details(slug):
 
     return jsonify(response)
 
-    
+#Returns True if book already exists in the database, otherwise returns false. 
+@book_blueprint.route('/exists/<bookname>/<slugname>', methods=['GET'])
+def book_exists(bookname,slugname):
+    book = Book.query.filter(or_(Book.name==bookname , Book.slug==slugname)).first()
+    if book:
+        return jsonify({"result": True}), 200
+    return jsonify({"result": False}), 404
 
     

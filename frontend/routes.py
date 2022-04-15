@@ -22,40 +22,11 @@ import base64
 
 blueprint = Blueprint('frontend', __name__)
 
-def get_event():
-    event =            {
-  'summary': 'Google I/O 2015',
-  'location': '800 Howard St., San Francisco, CA 94103',
-  'description': 'A chance to hear more about Google\'s developer products.',
-  'start': {
-    'dateTime': '2015-05-28T09:00:00-07:00',
-    'timeZone': 'America/Los_Angeles',
-  },
-  'end': {
-    'dateTime': '2015-05-28T17:00:00-07:00',
-    'timeZone': 'America/Los_Angeles',
-  },
-  'recurrence': [
-    'RRULE:FREQ=DAILY;COUNT=2'
-  ],
-  'attendees': [
-    {'email': 'lpage@example.com'},
-    {'email': 'sbrin@example.com'},
-  ],
-  'reminders': {
-    'useDefault': False,
-    'overrides': [
-      {'method': 'email', 'minutes': 24 * 60},
-      {'method': 'popup', 'minutes': 10},
-    ],
-  },
-}
-    return event
 
-#action to direct to landing page
+#api endpoint to direct to landing page
 @blueprint.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', books=books)
+    return render_template('index.html')
 
 #Registers the new users. user can be a teacher and student.
 @blueprint.route('/register', methods=['POST', 'GET'])
@@ -106,7 +77,7 @@ def logout():
     flash('Logged out')
     return render_template('thankyou.html')
 
-
+#get book details using slug id. 
 @blueprint.route('/book/<slug>', methods=['GET', 'POST'])
 def book_details(slug):
     response = BookClient.get_book(slug)
@@ -126,35 +97,41 @@ def book_details(slug):
 
     return render_template('book_info.html', book=book, form=form)
 
-
+#adds a new book into the database.
 @blueprint.route('/add_book', methods=['POST','GET'])
 def add_book():
     form = forms.AddNewBookForm()
     if request.method == 'POST':
         if form.validate_on_submit():
             bookname = form.name.data
-            
+            slug=form.slug.data
             f = form.upload.data
             filename = secure_filename(f.filename)
+            #checks the uploaded filename with entered filename
             if filename!=bookname+'.pdf':
                 flash("Wrong file uploaded. Please upload {}".format(bookname))
             elif filename==bookname+'.pdf':
-                book = BookClient.add_book(form)
-                if book:
+                isBookExists=BookClient.book_exists(bookname, slug)
+                if(isBookExists==False):
                     upload_file=Upload_File()
                     if(upload_file.create_bucket('scpprojbucket')):
                         isFileUploaded=upload_file.upload_file('scpprojbucket',f,filename)
                         #if file is uploaded then save the details in the database. 
                         if(isFileUploaded):
+                            book = BookClient.add_book(form)
                             flash("book added.")
                         else:
                             flash('book not added'+bookname)
+                    else:
+                            flash('book not added'+bookname)
+                else:
+                    flash("book {} and slug {} already exists.".format(filename, slug))
             else:
                 flash('book not added'+bookname)
     
     return render_template('add_book.html', form=form)
 
-   
+#endpoint to direct to search_book.html. It displays all the books with searching option.
 @blueprint.route('/search_books', methods=['POST','GET'])
 def search_books():
     if current_user.is_authenticated:
@@ -166,6 +143,7 @@ def search_books():
    
     return render_template('search_book.html', books=books)
 
+#It download the book of a particular name. 
 @blueprint.route('/download/<name>', methods=['GET'])
 def download(name):
     file_nm=str(name)+'.pdf'
@@ -175,18 +153,20 @@ def download(name):
     flash("file download")
     return render_template('search_book.html', books=session["books"])
    
-
+#shows the scheduled classes to the students.
 @blueprint.route('/scheduled_classes', methods=['GET'])
 def scheduled_classes():
     userid=session['user'].get("id")
     classes = ClassroomClient.get_scheduled_meetings(userid)
     return render_template('scheduled_classes.html', classes=classes)
     
+#It directs to the book_meeting.html.
 @blueprint.route('/classroom_booking', methods=['GET','POST'])
 def classroom_booking():
     students=UserClient.get_users()
     return render_template('book_meeting.html', students=students)
 
+#It gets all the users including students.
 @blueprint.route('/get_students', methods=['GET','POST'])
 def get_students():
     students=UserClient.get_users()
@@ -194,6 +174,7 @@ def get_students():
     form = forms.CreateAssignmentForm()
     return render_template('create_assignment.html', students=students, form=form)
 
+#blocks the calender of the invitee for the meeting using google apis like google meet and google calender.
 @blueprint.route('/block_calendar', methods=['GET', 'POST'])
 def block_calender():
     form = request.form
@@ -218,6 +199,8 @@ def block_calender():
     students=UserClient.get_users()
     return render_template('book_meeting.html', students=students)
 
+#It helps in emailing the details of all the books in the form of an excel using the 
+#library EmailExcel.
 @blueprint.route('/email_excel', methods=['POST', 'GET'])
 def email_excel():
     books = session['books']
@@ -232,6 +215,7 @@ def email_excel():
         flash("details of all book is mailed to {}.".format(useremailid))
     return redirect(url_for('frontend.search_books'))
 
+#It creates the assignment for a student by the teacher.
 @blueprint.route('/create_assignment', methods=['POST','GET'])
 def createassignment():
     form = forms.CreateAssignmentForm()
@@ -274,7 +258,7 @@ def createassignment():
 
     return render_template('create_assignment.html', students=session['students'], form=form)
 
-
+#private method to access google calender and google meet
 def use_google_calender(state_date, emails,meetingduration, title):
     credentials=pickle.load(open("token.pkl", "rb"))
     start_time=datetime.strptime(state_date, '%Y-%m-%dT%H:%M')
@@ -285,6 +269,7 @@ def use_google_calender(state_date, emails,meetingduration, title):
         result=service.calendarList().list().execute()
         calender_id=result['items'][0]['id']
         calendar_events= service.events().list(calendarId=calender_id).execute()
+        #event is created.
         event={
         'summary': title,
         'description': title,

@@ -29,4 +29,13 @@ class BookClient:
             book = response.json()
             print(book)
         return book
+
+    @staticmethod
+    def book_exists(bookname,slug):
+        url = BOOK_API_URL + '/api/book/exists/' + bookname +'/'+slug
+
+        response = requests.get(url)
+        print(response.status_code)
+        return response.status_code == 200
+
     
