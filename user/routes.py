@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 user_blueprint = Blueprint('user_api_routes', __name__,
                            url_prefix='/api/user')
 
-
+#get all the user
 @user_blueprint.route('/all', methods=['GET'])
 def get_all_users():
     all_user = User.query.all()
@@ -17,7 +17,7 @@ def get_all_users():
     }
     return jsonify(response)
 
-
+#create a new user
 @user_blueprint.route('/create', methods=['POST'])
 def create_user():
     try:
@@ -38,7 +38,7 @@ def create_user():
         response = {'message': 'Error in creating response'}
     return jsonify(response)
 
-
+#manages login logic of the application.
 @user_blueprint.route('/login', methods=['POST'])
 def login():
     username = request.form['username']
@@ -58,7 +58,7 @@ def login():
     response = {'message': 'Access denied'}
     return make_response(jsonify(response), 401)
 
-
+#manages the logout logic of the application
 @user_blueprint.route('/logout', methods=['POST'])
 def logout():
     if current_user.is_authenticated:
@@ -66,7 +66,7 @@ def logout():
         return jsonify({'message': 'logged out'})
     return jsonify({'message': 'No user logged in'}), 401
 
-
+#checks if user exists
 @user_blueprint.route('/<username>/exists', methods=['GET'])
 def user_exists(username):
     user = User.query.filter_by(username=username).first()
@@ -83,7 +83,7 @@ def get_current_user():
     else:
         return jsonify({'message': "User not logged in"}), 401
 
-
+#fetch the user details based on userid.
 @user_blueprint.route('/<id>', methods=['GET'])
 def get_user(id):
     user = User.query.filter_by(id=id).first()
@@ -93,6 +93,7 @@ def get_user(id):
         response = {"user":"No user found"}
     return jsonify(response)
 
+#get all the users having role student.
 @user_blueprint.route('/allstudents', methods=['GET'])
 def get_all_students():
     students = User.query.filter_by(role='student')

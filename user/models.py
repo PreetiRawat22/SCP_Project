@@ -2,17 +2,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
 from datetime import datetime
-#from flask import Flask
-#from models import db
 
 db = SQLAlchemy()
 
-
+#initalize the app
 def init_app(app):
     db.app = app
     db.init_app(app)
 
-
+#the user model holding details of the application like username, password etc.
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), unique=True)
@@ -27,6 +25,7 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f'<user {self.id}, {self.username}>'
 
+    #serialize the user model
     def serialize(self):
         return {
             'id': self.id,
