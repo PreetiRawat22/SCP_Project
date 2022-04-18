@@ -2,7 +2,7 @@ import requests
 
 from . import BOOK_API_URL
 
-
+#BookClient to interact with Book microservice
 class BookClient:
     @staticmethod
     def get_books():

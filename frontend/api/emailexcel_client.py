@@ -2,7 +2,7 @@ import requests
 from flask import session
 from . import EMAIL_EXCEL_URL
 
-
+#ExcelExcelclient to communicate with external library.
 class EmailExcelClient:
     
     

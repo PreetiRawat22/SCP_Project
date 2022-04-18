@@ -2,6 +2,7 @@ import requests
 from flask import session
 from . import CLASSROOM_API_URL
 
+#ClassroomClient to communicate with classroom microserivce.
 class ClassroomClient:
     @staticmethod
     def create_classroom(form):

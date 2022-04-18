@@ -2,6 +2,7 @@ import sys
 import boto3
 from botocore.exceptions import ClientError
 
+#class with communicate with S3 service with boto3 api.
 class Upload_File(object):
     def __init__(self):
         self.s3=boto3.resource('s3', region_name='us-east-1')

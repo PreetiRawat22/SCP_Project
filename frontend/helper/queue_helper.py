@@ -5,6 +5,7 @@ import logging
 from botocore.exceptions import ClientError
 import os
 
+#class with communicate with SQS service with boto3 api.
 class SQSHelper(object):
     def __init__(self):
         self.client= boto3.client('sqs',region_name='us-east-1')
