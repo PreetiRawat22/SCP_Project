@@ -19,6 +19,7 @@ from helper.s3_helper import Upload_File
 import webbrowser
 import pandas as pd
 import base64
+from flask import Markup
 
 blueprint = Blueprint('frontend', __name__)
 
@@ -149,8 +150,7 @@ def download(name):
     file_nm=str(name)+'.pdf'
     uploaded_file_object=Upload_File()
     url=uploaded_file_object.get_object_access_url('scpprojbucket', file_nm)
-    webbrowser.open(url, new=2, autoraise=True)
-    flash("file download")
+    flash(Markup('file download. click <a href={0} class="alert-link">here</a>'.format(url)))
     return render_template('search_book.html', books=session["books"])
    
 #shows the scheduled classes to the students.
@@ -277,7 +277,7 @@ def use_google_calender(state_date, emails,meetingduration, title):
         result=service.calendarList().list().execute()
         calender_id=result['items'][0]['id']
         calendar_events= service.events().list(calendarId=calender_id).execute()
-        #event is created.
+        #event is created holding all the details of the meeting like start time, end time and timezone.
         event={
         'summary': title,
         'description': title,
@@ -306,10 +306,12 @@ def use_google_calender(state_date, emails,meetingduration, title):
         ],
         },
         }
+        #event is inserted into the calender of the user with google meet link.
         event = service.events().insert(calendarId=calender_id, 
         conferenceDataVersion= 1,body=event, sendNotifications=True).execute()
         print('Event created: %s' % (event.get('htmlLink')))
     except Exception as e:
+        #incase of an exception a token has to be created again, as it might have been expired. 
         print(str(e))
         scopes = ['https://www.googleapis.com/auth/calendar']
         flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", scopes=scopes)
